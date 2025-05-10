@@ -1,5 +1,9 @@
 # Sistema de Verificação Modular de Segurança
 
+**Autor:** Douglas Wilson Vieira dos Santos
+
+**Matrícula:** 211030596 
+
 🔍 **Descrição**  
 Este programa verifica condições de segurança em operações modulares, calculando divisões modulares (`H⊘G mod n`) e exponenciações modulares (`a^x mod n1`), aplicando os **Teoremas de Fermat e Euler** para otimização.
 
@@ -26,4 +30,5 @@ O programa solicita:
    - Simplifica `a^x mod n1` para `(1^q * a^r) mod n1`.
 7. **Exibe o resultado final e uma verificação direta**  
    - Compara com o cálculo sem otimização para validar.
+
 
