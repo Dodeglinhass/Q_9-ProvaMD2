@@ -1,0 +1,324 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+// Função para calcular o MDC (Máximo Divisor Comum) usando o Algoritmo de Euclides
+int mdc(int a, int b) {
+    if (b == 0)
+        return a;
+    return mdc(b, a % b);
+}
+
+// Função para verificar se um número é primo
+int verificaPrimo(int n) {
+    if (n <= 1)
+        return 0;
+    if (n <= 3)
+        return 1;
+    if (n % 2 == 0 || n % 3 == 0)
+        return 0;
+    
+    // Otimização: Verifica apenas divisores da forma 6k±1 até sqrt(n)
+    for (int i = 5; i * i <= n; i += 6) {
+        if (n % i == 0 || n % (i + 2) == 0)
+            return 0;
+    }
+    
+    return 1;
+}
+
+// Função para calcular o inverso modular usando o algoritmo de Euclides estendido
+int inversoModular(int a, int m) {
+    int m0 = m, t, q;
+    int x0 = 0, x1 = 1;
+    
+    if (m == 1)
+        return 0;
+    
+    // Algoritmo de Euclides estendido
+    while (a > 1) {
+        // q é o quociente
+        q = a / m;
+        t = m;
+        
+        // m é o resto agora, processo semelhante ao Algoritmo de Euclides
+        m = a % m;
+        a = t;
+        
+        // Atualiza x0 e x1
+        t = x0;
+        x0 = x1 - q * x0;
+        x1 = t;
+    }
+    
+    // Certifica-se que x1 é positivo
+    if (x1 < 0)
+        x1 += m0;
+    
+    return x1;
+}
+
+// Função para verificar se dois números são coprimos
+int saoCoprimos(int a, int b) {
+    return mdc(a, b) == 1;
+}
+
+// Função para calcular a exponenciação modular eficiente (a^b mod m)
+int expModular(int base, long long exp, int mod) {
+    int resultado = 1;
+    
+    // Atualiza base se for >= mod
+    base = base % mod;
+    
+    // Algoritmo de Exponenciação Rápida (square-and-multiply)
+    while (exp > 0) {
+        // Se exp for ímpar, multiplica resultado por base
+        if (exp & 1)
+            resultado = (1LL * resultado * base) % mod;
+        
+        // exp se torna exp/2
+        exp = exp >> 1;
+        // base se torna base^2
+        base = (1LL * base * base) % mod;
+    }
+    
+    return resultado;
+}
+
+// Função para calcular a função totiente de Euler phi(n)
+int phi(int n) {
+    int resultado = n; // Inicializa com n
+    
+    // Encontra todos os fatores primos e calcula phi(n)
+    for (int p = 2; p * p <= n; p++) {
+        if (n % p == 0) {
+            // p é um fator primo
+            while (n % p == 0)
+                n /= p;
+            
+            // Reduzindo o valor usando a fórmula phi(n) = n * produto(1 - 1/p)
+            resultado -= resultado / p;
+            
+            // Explicação: Se p é fator primo de n, reduzimos resultado por resultado/p
+            // representando a fórmula phi(n) = n * Π(1 - 1/p) para todos os fatores primos p
+        }
+    }
+    
+    // Se n > 1, então n é um fator primo
+    if (n > 1)
+        resultado -= resultado / n;
+    
+    return resultado;
+}
+
+int main() {
+    int H, G, n, x, n1;
+    int a; // Base para exponenciação
+    
+    printf("=== Sistema de Verificação Modular de Segurança ===\n\n");
+    printf("Digite os valores de H, G e n para calcular a base a (H⊘G em Zn): ");
+    scanf("%d %d %d", &H, &G, &n);
+    
+    printf("Digite o expoente x: ");
+    scanf("%d", &x);
+    
+    printf("Digite o módulo n1: ");
+    scanf("%d", &n1);
+    
+    printf("\n--- Iniciando processo de verificação de segurança ---\n\n");
+    printf("Valores de entrada: H = %d, G = %d, n = %d, x = %d, n1 = %d\n\n", H, G, n, x, n1);
+    
+    // Etapa 1: Verificar se G e n são primos entre si
+    printf("Etapa 1: Verificando se G e n são coprimos (primos entre si)...\n");
+    int gcd_G_n = mdc(G, n);
+    if (gcd_G_n != 1) {
+        printf("   - G (%d) e n (%d) não são coprimos. MDC(G,n) = %d\n", G, n, gcd_G_n);
+        printf("   - A operação de divisão modular não é possível, pois G não possui inverso em Zn.\n");
+        printf("   - EXPLICAÇÃO: Para que a divisão modular H⊘G seja possível em Zn,\n");
+        printf("     G e n devem ser coprimos (MDC = 1), pois só assim G terá um inverso em Zn.\n");
+        
+        printf("\n=== Resumo Simplificado ===\n");
+        printf("Entrada: H = %d, G = %d, n = %d, x = %d, n1 = %d\n", H, G, n, x, n1);
+        printf("G = %d e n = %d não são primos entre si (mdc = %d).\n", G, n, gcd_G_n);
+        printf("Divisão modular H ⊘ G em Zn não é possível.\n");
+        
+        return 1;
+    } else {
+        printf("   - G (%d) e n (%d) são coprimos. MDC(G,n) = 1\n", G, n, gcd_G_n);
+        printf("   - A operação de divisão modular é possível.\n");
+        printf("   - EXPLICAÇÃO: Como G e n são coprimos, G possui um inverso multiplicativo em Zn,\n");
+        printf("     o que permite calcular H⊘G como H * G^(-1) mod n.\n");
+    }
+    
+    // Etapa 2: Calcular o inverso de G em Zn
+    printf("\nEtapa 2: Calculando o inverso de G em Zn...\n");
+    int G_inv = inversoModular(G, n);
+    printf("   - O inverso de G (%d) em Z%d é %d\n", G, n, G_inv);
+    printf("   - Verificação: (G * G^(-1)) mod n = (%d * %d) mod %d = %d\n", 
+           G, G_inv, n, (G * G_inv) % n);
+    printf("   - EXPLICAÇÃO: O inverso modular G^(-1) é o número que, quando multiplicado por G\n");
+    printf("     e calculado o módulo n, resulta em 1. Usamos o algoritmo de Euclides estendido\n");
+    printf("     para encontrá-lo, pois G e n são coprimos.\n");
+    
+    // Etapa 3: Calcular a = H ⊘ G em Zn (equivalente a H * G^(-1) mod n)
+    printf("\nEtapa 3: Calculando a = H ⊘ G em Zn...\n");
+    a = (1LL * H * G_inv) % n;
+    printf("   - a = H ⊘ G = H * G^(-1) mod n\n");
+    printf("   - a = %d * %d mod %d = %d\n", H, G_inv, n, a);
+    printf("   - EXPLICAÇÃO: A divisão modular H⊘G é implementada como a multiplicação de H pelo\n");
+    printf("     inverso modular de G. Este valor %d será a base para nossa exponenciação.\n", a);
+    
+    // Etapa 4: Verificar se a e n1 são coprimos
+    printf("\nEtapa 4: Verificando se a e n1 são coprimos...\n");
+    int gcd_a_n1 = mdc(a, n1);
+    if (gcd_a_n1 != 1) {
+        printf("   - a (%d) e n1 (%d) não são coprimos. MDC(a,n1) = %d\n", a, n1, gcd_a_n1);
+        printf("   - EXPLICAÇÃO: Para aplicar os teoremas de Fermat ou Euler, a e n1 devem ser coprimos.\n");
+        printf("     Como MDC(a,n1) = %d ≠ 1, não podemos aplicar esses teoremas corretamente.\n", gcd_a_n1);
+        printf("   - Aviso: Não é possível calcular a^x mod n1 utilizando os teoremas propostos.\n");
+        
+        printf("\n=== Resumo Simplificado ===\n");
+        printf("Entrada: H = %d, G = %d, n = %d, x = %d, n1 = %d\n", H, G, n, x, n1);
+        printf("G e n são coprimos (mdc = 1).\n");
+        printf("Base calculada: a = %d\n", a);
+        printf("%d e %d não são coprimos (mdc = %d).\n", a, n1, gcd_a_n1);
+        printf("Não é possível calcular a^x mod n1 utilizando os teoremas.\n");
+        
+        return 1;
+    } else {
+        printf("   - a (%d) e n1 (%d) são coprimos. MDC(a,n1) = 1\n", a, n1, gcd_a_n1);
+        printf("   - EXPLICAÇÃO: Como a e n1 são coprimos, podemos aplicar os teoremas\n");
+        printf("     de Fermat (se n1 for primo) ou de Euler (caso contrário) para otimizar os cálculos.\n");
+    }
+    
+    // Etapa 5: Verificar se n1 é primo
+    printf("\nEtapa 5: Verificando se n1 é primo...\n");
+    int n1_primo = verificaPrimo(n1);
+    if (n1_primo) {
+        printf("   - n1 (%d) é primo.\n", n1);
+        printf("   - EXPLICAÇÃO: Como n1 é primo, podemos aplicar o Pequeno Teorema de Fermat,\n");
+        printf("     que estabelece que para qualquer inteiro a não divisível por p (primo),\n");
+        printf("     temos a^(p-1) ≡ 1 (mod p).\n");
+    } else {
+        printf("   - n1 (%d) não é primo.\n", n1);
+        printf("   - EXPLICAÇÃO: Como n1 não é primo, utilizaremos o Teorema de Euler, que\n");
+        printf("     estabelece que a^φ(n1) ≡ 1 (mod n1) quando a e n1 são coprimos,\n");
+        printf("     onde φ(n1) é a função totiente de Euler.\n");
+    }
+    
+    // Etapa 6 e 7: Aplicar teorema adequado conforme primalidade de n1
+    long long x1;
+    printf("\nEtapa 6/7: Aplicando ");
+    if (n1_primo) {
+        printf("o Pequeno Teorema de Fermat (n1 é primo)...\n");
+        x1 = n1 - 1;
+        printf("   - Pelo Pequeno Teorema de Fermat, a^(n1-1) ≡ 1 (mod n1)\n");
+        printf("   - Definindo x1 = n1 - 1 = %d - 1 = %lld\n", n1, x1);
+        printf("   - EXPLICAÇÃO: O Pequeno Teorema de Fermat nos permite reduzir potências\n");
+        printf("     grandes módulo n1. Sabemos que a^(n1-1) ≡ 1 (mod n1), então\n");
+        printf("     a^k ≡ a^(k mod (n1-1)) (mod n1) quando k ≥ n1-1.\n");
+    } else {
+        printf("o Teorema de Euler (n1 não é primo)...\n");
+        x1 = phi(n1);
+        printf("   - Pelo Teorema de Euler, a^φ(n1) ≡ 1 (mod n1)\n");
+        printf("   - Calculando φ(n1) = φ(%d) = %lld\n", n1, x1);
+        printf("   - EXPLICAÇÃO: O Teorema de Euler generaliza o Pequeno Teorema de Fermat\n");
+        printf("     para módulos compostos. A função φ(n1) conta os números de 1 a n1 que\n");
+        printf("     são coprimos com n1. Sabemos que a^φ(n1) ≡ 1 (mod n1).\n");
+    }
+    
+    // Etapa 8: Decompor o expoente x usando o teorema da divisão
+    printf("\nEtapa 8: Decompondo o expoente x na forma x = x1*q + r...\n");
+    long long q = x / x1;
+    long long r = x % x1;
+    printf("   - x = %d\n", x);
+    printf("   - x1 = %lld\n", x1);
+    printf("   - q = x / x1 = %d / %lld = %lld\n", x, x1, q);
+    printf("   - r = x %% x1 = %d %% %lld = %lld\n", x, x1, r);
+    printf("   - Verificação: x1*q + r = %lld*%lld + %lld = %lld\n", x1, q, r, x1*q + r);
+    printf("   - EXPLICAÇÃO: Utilizamos o algoritmo da divisão para expressar x como\n");
+    printf("     x = x1*q + r, onde 0 ≤ r < x1. Isso nos permite simplificar a\n");
+    printf("     exponenciação modular usando as propriedades dos teoremas anteriores.\n");
+    
+    // Etapa 9: Reescrever a expressão modular
+    printf("\nEtapa 9: Reescrevendo a expressão a^x mod n1...\n");
+    printf("   - a^x mod n1 = ((a^x1)^q * a^r) mod n1\n");
+    printf("   - EXPLICAÇÃO: Utilizando as propriedades de exponenciação e\n");
+    printf("     substituindo x = x1*q + r, podemos reescrever:\n");
+    printf("     a^x = a^(x1*q + r) = (a^x1)^q * a^r\n");
+    printf("     Sabemos que a^x1 ≡ 1 (mod n1) pelo teorema aplicado anteriormente.\n");
+    printf("     Portanto, (a^x1)^q ≡ 1^q ≡ 1 (mod n1), mas calcularemos diretamente para verificar.\n");
+    
+    // Etapa 10: Calcular valores intermediários
+    printf("\nEtapa 10: Calculando valores intermediários...\n");
+    
+    printf("   - Calculando a^x1 mod n1:\n");
+    int x2 = expModular(a, x1, n1);
+    printf("     a^x1 mod n1 = %d^%lld mod %d = %d\n", a, x1, n1, x2);
+    printf("     NOTA: Teoricamente, a^x1 mod n1 = 1, mas calculamos diretamente para verificação.\n");
+    printf("           Se o valor não for 1, pode indicar um erro nos cálculos ou premissas.\n");
+    
+    printf("   - Calculando (a^x1)^q mod n1:\n");
+    int x2_q = expModular(x2, q, n1);
+    printf("     (a^x1)^q mod n1 = %d^%lld mod %d = %d\n", x2, q, n1, x2_q);
+    printf("     NOTA: Como a^x1 mod n1 = %d, então (a^x1)^q mod n1 = %d^%lld mod %d.\n", 
+           x2, x2, q, n1);
+    
+    printf("   - Calculando a^r mod n1:\n");
+    int a_r = expModular(a, r, n1);
+    printf("     a^r mod n1 = %d^%lld mod %d = %d\n", a, r, n1, a_r);
+    printf("     NOTA: Utilizamos exponenciação modular rápida (square-and-multiply) para\n");
+    printf("           calcular a^r mod n1 de forma eficiente.\n");
+    
+    // Etapa 11: Calcular o resultado final
+    printf("\nEtapa 11: Calculando o resultado final...\n");
+    int resultado = (1LL * x2_q * a_r) % n1;
+    printf("   - Resultado = ((a^x1)^q * a^r) mod n1\n");
+    printf("   - Resultado = (%d * %d) mod %d = %d\n", x2_q, a_r, n1, resultado);
+    printf("   - EXPLICAÇÃO: O resultado final é obtido multiplicando (a^x1)^q e a^r no módulo n1.\n");
+    printf("     Esta é a otimização chave que reduz drasticamente o tempo de cálculo para\n");
+    printf("     expoentes grandes, explorando as propriedades dos teoremas de Fermat/Euler.\n");
+    
+    printf("\n=== Conclusão ===\n");
+    printf("Para H = %d, G = %d, n = %d, x = %d, n1 = %d:\n", H, G, n, x, n1);
+    printf("a = %d (base calculada como H⊘G em Zn)\n", a);
+    printf("a^x mod n1 = %d^%d mod %d = %d\n\n", a, x, n1, resultado);
+    
+    // Verificação do resultado usando a exponenciação direta
+    printf("Verificação (exponenciação direta):\n");
+    int resultado_direto = expModular(a, x, n1);
+    printf("a^x mod n1 = %d^%d mod %d = %d\n", a, x, n1, resultado_direto);
+    if (resultado == resultado_direto) {
+        printf("Os resultados coincidem! A otimização funcionou corretamente.\n\n");
+    } else {
+        printf("AVISO: Os resultados diferem. Verifique a implementação.\n\n");
+    }
+    
+    // Resumo simplificado como nos exemplos fornecidos
+    printf("\n=== Resumo Simplificado ===\n");
+    printf("Entrada: H = %d, G = %d, n = %d, x = %d, n1 = %d\n", H, G, n, x, n1);
+    
+    if (!saoCoprimos(G, n)) {
+        printf("G = %d e n = %d não são primos entre si (mdc = %d).\n", G, n, mdc(G, n));
+        printf("Divisão modular H ⊘ G em Zn não é possível.\n");
+    } else {
+        printf("G e n são coprimos (mdc = 1).\n");
+        printf("Base calculada: a = %d\n", a);
+        
+        if (!saoCoprimos(a, n1)) {
+            printf("%d e %d não são coprimos (mdc = %d).\n", a, n1, mdc(a, n1));
+            printf("Não é possível calcular a^x mod n1 utilizando os teoremas.\n");
+        } else {
+            printf("%d e %d são coprimos.\n", a, n1);
+            if (n1_primo) {
+                printf("%d é primo → aplicando Pequeno Teorema de Fermat (x₁ = %lld).\n", n1, x1);
+            } else {
+                printf("%d não é primo → aplicando Teorema de Euler (φ(%d) = %lld).\n", n1, n1, x1);
+            }
+            printf("Decomposição do expoente: %d = %lld*%lld + %lld.\n", x, x1, q, r);
+            printf("%d^%d mod %d ≡ (%d * %d) mod %d = %d.\n", a, x, n1, x2_q, a_r, n1, resultado);
+        }
+    }
+    
+    return 0;
+}
